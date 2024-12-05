@@ -28,7 +28,7 @@ def embed_call(chunk_message):
     return json.loads(response['body'].read().decode('utf-8'))
 
 
-def search_similar_fragments(query_text, top_k=8):
+def search_similar_fragments(query_text, top_k=10):
     session = Session()
     query_embedding = embed_call(query_text)['embedding']
     embedding_str = "ARRAY[" + ", ".join(map(str, query_embedding)) + "]::vector"
@@ -46,18 +46,21 @@ def search_similar_fragments(query_text, top_k=8):
 
     results = session.execute(query, {"top_k": top_k}).fetchall()
     session.close()
-    return pd.DataFrame(results, columns=["id", "numero_seccion", "fragmento", "similarity"])
+    df = pd.DataFrame(results, columns=["id", "numero_seccion", "fragmento", "similarity"])
+    filtered_df = df[df["similarity"] >= 0.55]
+    return filtered_df
 
 
 llm = BedrockLLM(model_id="amazon.titan-tg1-large")
 prompt_template = PromptTemplate(
     input_variables=["context", "question"],
-    template="""Eres un bot de ayuda asi que saludame y respondeme amigablemente 
-    Usando el siguiente contexto como referencia, responde a la pregunta de manera detallada, explicativa y bien elaborada. Si es necesario, organiza la información para que sea fácil de entender.
+    template="""Eres un bot experto en servicios de infraestructura en la nube. Responde de forma amigable y clara.
+    Usa los fragmentos proporcionados como contexto para responder la pregunta. Elimina redundancias y organiza la información para que sea clara y completa.
 
-    1. Respuesta directa:
-    2. Explicación detallada:
-    3. Conclusión:
+    Formato:
+    1. Respuesta directa: Un resumen conciso y claro.
+    2. Explicación detallada: Una descripción elaborada basada en el contexto.
+    3. Conclusión: Una síntesis final relevante.
 
     Contexto:
     {context}
@@ -68,17 +71,20 @@ prompt_template = PromptTemplate(
     Respuesta:
     """
 )
+
+
 chain = LLMChain(llm=llm, prompt=prompt_template)
 
 
-def realizar_consulta(query, top_k=5):
+def realizar_consulta(query, top_k=10):
     resultados = search_similar_fragments(query, top_k)
-    ojito = [f"Fragmento {idx + 1}: {resul['numero_seccion']} - {resul['fragmento']}" for idx, resul in resultados.iterrows()]
+    resultados = resultados.drop_duplicates(subset="fragmento", keep="first")
+    ojito = [f"<Fragmento {idx + 1}: indice en el documento: {resul['numero_seccion']} - chunk: {resul['fragmento']}>" for idx, resul in resultados.iterrows()]
     context = "\n".join(ojito)
     response = chain.run(context=context, question=query)
-    print("Respuesta generada:", response)
+    print("Respuesta generada:\n\n", response)
 
 
 if __name__ == "__main__":
-    query = input()
-    realizar_consulta(query, top_k=5)
+    query = "¿Qué objetivos específicos se buscan alcanzar con este servicio de infraestructura en la nube?"
+    realizar_consulta(query, top_k=10)
