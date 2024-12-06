@@ -73,18 +73,42 @@ prompt_template = PromptTemplate(
 )
 
 
+def eliminar_overlap(fragmentos, overlap=20):
+    resultado = []
+    for fragmento in fragmentos:
+        if resultado and fragmento.startswith(resultado[-1][-overlap:]):
+            fragmento = fragmento[len(resultado[-1][-overlap:]):]
+        resultado.append(fragmento.strip())
+    return resultado
+
+def obtener_contenido_completo(indices):
+    session = Session()
+    query = text("""
+        SELECT numero_seccion, fragmento
+        FROM secciones
+        WHERE numero_seccion = ANY(:indices)
+        ORDER BY numero_seccion ASC
+    """)
+    results = session.execute(query, {"indices": indices}).fetchall()
+    session.close()
+
+    df = pd.DataFrame(results, columns=["numero_seccion", "contenido"])
+    return df
+
 chain = LLMChain(llm=llm, prompt=prompt_template)
 
 
 def realizar_consulta(query, top_k=10):
     resultados = search_similar_fragments(query, top_k)
     resultados = resultados.drop_duplicates(subset="fragmento", keep="first")
-    ojito = [f"<Fragmento {idx + 1}: indice en el documento: {resul['numero_seccion']} - chunk: {resul['fragmento']}>" for idx, resul in resultados.iterrows()]
-    context = "\n".join(ojito)
+    indices_relevantes = resultados["numero_seccion"].unique().tolist()
+    contenido_completo = obtener_contenido_completo(indices_relevantes)
+    fragmentos_sin_overlap = eliminar_overlap(contenido_completo["contenido"].tolist())
+    context = " ".join(fragmentos_sin_overlap)
     response = chain.run(context=context, question=query)
     print("Respuesta generada:\n\n", response)
 
 
 if __name__ == "__main__":
-    query = "¿Qué objetivos específicos se buscan alcanzar con este servicio de infraestructura en la nube?"
+    query = "¿Que certificaciones necesitan los desarrolladores?"
     realizar_consulta(query, top_k=10)
