@@ -4,9 +4,7 @@ import json
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
-from langchain_aws import BedrockLLM
-from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
+
 
 DATABASE_URL = "postgresql://postgres:postgres72861001@sandbox-ia.ccnrq57mco3x.us-east-1.rds.amazonaws.com:5432/clau"
 engine = create_engine(DATABASE_URL, connect_args={"connect_timeout": 1200})
@@ -14,7 +12,6 @@ Session = sessionmaker(bind=engine)
 
 session = boto3.Session()
 AWS_REGION = session.region_name
-print("AWS Region:", AWS_REGION)
 MODEL_NAME = "anthropic.claude-3-haiku-20240307-v1:0"
 
 
@@ -109,10 +106,9 @@ def generate_research(search_results):
     return research
 
 
-
-
 if __name__ == "__main__":
-    QUESTION = "¿Qué certificaciones necesita el personal?"
+    QUESTION = "¿Qué motores de base de datos debe permitir el servicio?"
+
     research = realizar_consulta(QUESTION, top_k=3)
     NEW_RESEARCH = generate_research(research)
 
@@ -133,17 +129,18 @@ if __name__ == "__main__":
     </example>
     </examples>"""
 
-    TASK_DESCRIPTION = """Escriba una respuesta clara y concisa a esta pregunta:
+    TASK_DESCRIPTION = f"""Escriba una respuesta clara y concisa a esta pregunta:
     <question>
     {QUESTION}
     </question>
     No debe tener más de un par de párrafos. Si es posible, debe concluir con una sola oración que responda directamente a la pregunta del usuario. Sin embargo, si no hay suficiente información en la investigación recopilada para producir dicha respuesta, puede dudar y escribir "Lo siento, no tengo suficiente información a mano para responder a esta pregunta"."""
 
-    PRECOGNITION = "Antes de responder, extraiga las citas más relevantes de la investigación en las etiquetas <relevant_quotes>."
+    PRECOGNITION = "Antes de responder, extraiga las citas más relevantes de la investigación en base a la pregunta en las etiquetas <relevant_quotes>."
     OUTPUT_FORMATTING = "Coloque su respuesta de dos párrafos en las etiquetas <respuesta>."
     PREFILL = "<citas_relevantes>"
 
     PROMPT = ""
+
 
     if TONE_CONTEXT:
         PROMPT += f"""\n\n{TONE_CONTEXT}"""
@@ -157,6 +154,7 @@ if __name__ == "__main__":
         PROMPT += f"""\n\n{PRECOGNITION}"""
     if OUTPUT_FORMATTING:
         PROMPT += f"""\n\n{OUTPUT_FORMATTING}"""
+
 
     print(get_completion(PROMPT, SYSTEM_PROMPT))
 
