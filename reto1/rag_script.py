@@ -1,3 +1,5 @@
+from decimal import Context
+
 import boto3
 import pandas as pd
 import json
@@ -7,6 +9,7 @@ from sqlalchemy.sql import text
 from langchain_aws import BedrockLLM
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
+from transformers import pipeline
 
 DATABASE_URL = "postgresql://postgres:postgres72861001@sandbox-ia.ccnrq57mco3x.us-east-1.rds.amazonaws.com:5432/clau"
 engine = create_engine(DATABASE_URL, connect_args={"connect_timeout": 1200})
@@ -28,7 +31,7 @@ def embed_call(chunk_message):
     return json.loads(response['body'].read().decode('utf-8'))
 
 
-def search_similar_fragments(query_text, top_k=10):
+def search_similar_fragments(query_text, top_k):
     session = Session()
     query_embedding = embed_call(query_text)['embedding']
     embedding_str = "ARRAY[" + ", ".join(map(str, query_embedding)) + "]::vector"
@@ -47,11 +50,10 @@ def search_similar_fragments(query_text, top_k=10):
     results = session.execute(query, {"top_k": top_k}).fetchall()
     session.close()
     df = pd.DataFrame(results, columns=["id", "numero_seccion", "fragmento", "similarity"])
-    filtered_df = df[df["similarity"] >= 0.55]
-    return filtered_df
+    return df
 
 
-llm = BedrockLLM(model_id="amazon.titan-tg1-large")
+llm = BedrockLLM(model_id="amazon.titan-tg1-large", temperature=0.0)
 prompt_template = PromptTemplate(
     input_variables=["context", "question"],
     template="""Eres un bot experto en servicios de infraestructura en la nube. Responde de forma amigable y clara.
@@ -71,6 +73,21 @@ prompt_template = PromptTemplate(
     Respuesta:
     """
 )
+
+
+summarizer = pipeline("summarization")
+
+
+
+def resumir_fragmento(texto, max_length=200, min_length=50, max_tokens=450):
+    palabras = texto.split()
+    fragmentos = [" ".join(palabras[i:i + max_tokens]) for i in range(0, len(palabras), max_tokens)]
+    resúmenes = []
+    for fragmento in fragmentos:
+        resumen = summarizer(fragmento, max_length=max_length, min_length=min_length, do_sample=False)
+        resúmenes.append(resumen[0]["summary_text"])
+
+    return " ".join(resúmenes)
 
 
 def eliminar_overlap(fragmentos, overlap=20):
@@ -98,17 +115,19 @@ def obtener_contenido_completo(indices):
 chain = LLMChain(llm=llm, prompt=prompt_template)
 
 
-def realizar_consulta(query, top_k=10):
+def realizar_consulta(query, top_k):
     resultados = search_similar_fragments(query, top_k)
     resultados = resultados.drop_duplicates(subset="fragmento", keep="first")
     indices_relevantes = resultados["numero_seccion"].unique().tolist()
     contenido_completo = obtener_contenido_completo(indices_relevantes)
-    fragmentos_sin_overlap = eliminar_overlap(contenido_completo["contenido"].tolist())
+    fragmentos_sin_overlap = eliminar_overlap(contenido_completo['contenido'].tolist())
     context = " ".join(fragmentos_sin_overlap)
+    context = resumir_fragmento(context)
+    print(len(context))
     response = chain.run(context=context, question=query)
     print("Respuesta generada:\n\n", response)
 
 
 if __name__ == "__main__":
-    query = "¿Que certificaciones necesitan los desarrolladores?"
-    realizar_consulta(query, top_k=10)
+    query = "¿Qué medidas de seguridad específicas protegen los datos personales almacenados?"
+    realizar_consulta(query, top_k=3)
