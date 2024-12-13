@@ -15,7 +15,6 @@ AWS_REGION = session.region_name
 MODEL_NAME = "anthropic.claude-3-haiku-20240307-v1:0"
 
 
-
 def get_completion(prompt, system=''):
     bedrock = boto3.client(service_name='bedrock-runtime', region_name=AWS_REGION)
 
@@ -32,7 +31,6 @@ def get_completion(prompt, system=''):
     response = bedrock.invoke_model(modelId=MODEL_NAME, body=json.dumps(request_body))
     response_body = json.loads(response['body'].read())
     return response_body['content'][0]['text']
-
 
 bedrock_runtime = boto3.client(
     service_name='bedrock-runtime',
@@ -58,7 +56,7 @@ def search_similar_fragments(query_text, top_k):
             numero_seccion, 
             fragmento, 
             cosine_similarity(embedding, {embedding_str}) AS similarity
-        FROM secciones
+        FROM frag
         ORDER BY similarity DESC
         LIMIT :top_k
     """)
@@ -67,33 +65,25 @@ def search_similar_fragments(query_text, top_k):
     session.close()
     df = pd.DataFrame(results, columns=["id", "numero_seccion", "fragmento", "similarity"])
     return df
-def obtener_contenido_completo(indices):
-    session = Session()
-    query = text("""
-        SELECT numero_seccion, fragmento
-        FROM secciones
-        WHERE numero_seccion = ANY(:indices)
-        ORDER BY numero_seccion ASC
-    """)
-    results = session.execute(query, {"indices": indices}).fetchall()
-    session.close()
 
-    df = pd.DataFrame(results, columns=["numero_seccion", "contenido"])
+def obtener_contenido_por_indices(json_data, indices_relevantes):
+    contenidos = []
+    for seccion in json_data.get("secciones", []):
+        if seccion["numero"] in indices_relevantes:
+            contenidos.append(seccion["contenido"])
+    return contenidos
 
-    contenido_agrupado = (
-        df.groupby("numero_seccion")["contenido"]
-        .apply(lambda fragments: " ".join(fragments))
-        .tolist()
-    )
-    return contenido_agrupado
-
-
+def cargar_json(filepath: str):
+    with open(filepath, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 def realizar_consulta(query, top_k):
     resultados = search_similar_fragments(query, top_k)
     resultados = resultados.drop_duplicates(subset="fragmento", keep="first")
     indices_relevantes = resultados["numero_seccion"].unique().tolist()
-    contenido_completo = obtener_contenido_completo(indices_relevantes)
+    print(indices_relevantes)
+    json_data = cargar_json("secciones.json")
+    contenido_completo = obtener_contenido_por_indices(json_data, indices_relevantes)
     return contenido_completo
 
 def generate_research(search_results):
@@ -107,7 +97,11 @@ def generate_research(search_results):
 
 
 if __name__ == "__main__":
-    QUESTION = "¿Qué motores de base de datos debe permitir el servicio?"
+    QUESTION = """
+    
+¿Qué tipo de capacidades necesita EsSalud para desplegar sus aplicaciones?
+    
+"""
 
     research = realizar_consulta(QUESTION, top_k=3)
     NEW_RESEARCH = generate_research(research)
@@ -137,7 +131,7 @@ if __name__ == "__main__":
 
     PRECOGNITION = "Antes de responder, extraiga las citas más relevantes de la investigación en base a la pregunta en las etiquetas <relevant_quotes>."
     OUTPUT_FORMATTING = "Coloque su respuesta de dos párrafos en las etiquetas <respuesta>."
-    PREFILL = "<citas_relevantes>"
+    PREFILL = "<relevant_quotes>"
 
     PROMPT = ""
 
