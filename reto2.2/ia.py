@@ -13,7 +13,8 @@ engine = create_engine(DATABASE_URL, connect_args={"connect_timeout": 1200})
 Session = sessionmaker(bind=engine)
 session = boto3.Session()
 AWS_REGION = session.region_name
-MODEL_NAME = "anthropic.claude-3-haiku-20240307-v1:0"
+MODEL_NAME = "anthropic.claude-3-5-sonnet-20240620-v1:0"
+#us.anthropic.claude-3-5-haiku-20241022-v1:0
 
 def embed_body(chunk_message: str):
     return json.dumps({
@@ -46,6 +47,24 @@ def get_completion(prompt, system=''):
     response = bedrock.invoke_model(modelId=MODEL_NAME, body=json.dumps(request_body))
     response_body = json.loads(response['body'].read())
     return response_body['content'][0]['text']
+
+def get_answer(prompt, system=''):
+    bedrock = boto3.client(service_name='bedrock-runtime', region_name=AWS_REGION)
+
+    request_body = {
+        "anthropic_version": "bedrock-2023-05-31",
+        "max_tokens": 2000,
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0
+    }
+
+    if system:
+        request_body["system"] = system
+
+    response = bedrock.invoke_model(modelId="us.anthropic.claude-3-5-haiku-20241022-v1:0", body=json.dumps(request_body))
+    response_body = json.loads(response['body'].read())
+    return response_body['content'][0]['text']
+
 def clasificar_pregunta(pregunta):
     system_prompt = """
 
@@ -55,7 +74,7 @@ def clasificar_pregunta(pregunta):
 
     2. Diferencias en una sección específica: Preguntas que mencionan una sección, parte o capítulo del documento (ejemplo: sección 4, 5.3, capítulo específico).
 
-    3. Diferencias en certificaciones técnicas o unidades lógicas: Preguntas relacionadas con requisitos técnicos, certificaciones (como ISO), arquitectura o especificaciones técnicas.
+    3. Diferencias en certificaciones técnicas, unidades lógicas o detalles específicos: Preguntas relacionadas con requisitos técnicos, certificaciones (como ISO), arquitectura, especificaciones técnicas o detalles específicos como anexos, formas de pago, características del servicio, plazos, condiciones o cualquier aspecto particular del documento.
 
     IMPORTANTE: Devuelve únicamente el número de la categoría.
 
@@ -73,7 +92,7 @@ def clasificar_pregunta(pregunta):
 
     user_prompt = f"""Clasifica la siguiente pregunta: <pregunta>{pregunta}</pregunta> """
 
-    response = get_completion(user_prompt, system=system_prompt)
+    response = get_answer(user_prompt, system=system_prompt)
     return response.strip()
 
 def cosine_similarity(vec1, vec2):
