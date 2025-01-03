@@ -13,8 +13,9 @@ def main():
     #save_diff(json1, json2, "json/diff.json")
 
 
+
     #:)
-    QUESTION = """ ¿Cuales son las diferencias en todo el documento? """
+    #QUESTION = """ ¿Cuales son las diferencias en todo el documento? """
     #QUESTION = """ ¿Cuales son las diferencias en las certificaciones? """
     #QUESTION = """Cuales son las formas de pago?"""
     #QUESTION = "El servicio de gestion de dns debe tener minimo de disponibilidad del 70.9%?"
@@ -29,9 +30,11 @@ def main():
     #QUESTION = "De la seccion 2, 3 y 6 del documento, qué información diferencia ambos documentos?"
     #QUESTION = "Nosotros como desarrolladores, cuáles son los principales cambios en todo el documento que debemos tener en cuenta en el segundo documento?"
     #QUESTION = """ Hablame sobre los plazos """
+    QUESTION = "Cuales son las diferencias en la seccion 5.4 de los 2 documentos?"
 
 
 
+    #QUESTION = optimizar_query(QUESTION)
     first_answer = clasificar_pregunta(QUESTION)
     print(first_answer)
 

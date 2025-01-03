@@ -188,7 +188,7 @@ def procesar_tipov2(query: str, diff_file: str, json_file1: str, json_file2: str
             reporte += f"\n\n # NUMERO DE SECCION: {sub_seccion} \n\n  "
             reporte += get_completion(prompt)
 
-    prompi = gencomp1(reporte)
+    prompi = gencomp1(reporte, query)
     return get_completion(prompi)
 
 
@@ -239,10 +239,10 @@ def gencomp2(retrieved_info, section, doc1, doc2):
 
         Por favor, realiza las siguientes tareas:
         1. **Analiza las diferencias encontradas en ambas versiones de texto** y extrae las citas más relevantes de la investigación.
-        2. **Identifica eliminaciones o adiciones entre ambas versiones. usa la informacion de la tarea anterior y DEBES SER BREVE Y DIRECTO EN TU RESPUESTA**
+        2. **Interpreta eliminaciones o adiciones entre ambas versiones. usa la informacion de la tarea anterior y DEBES SER BREVE Y DIRECTO EN TU RESPUESTA**
 
-        Tienes que tener encuenta que todo lo que está delante de un '-' representa lo que se ha modificado del primer documento, y todo lo que está delante de un '+' representa lo que se ha modificado del segundo documento.
-
+        Tienes que tener encuenta que todo '-': Cambios del primer documento, '+': Cambios del segundo documento.
+        
         El formato del archivo markdown que vas a generar como respuesta que tienes que seguir es el siguiente:
         ### 1. <Análisis de las diferencias encontradas:>
             <Diferencias encontradas>
@@ -259,6 +259,7 @@ def gencomp2(retrieved_info, section, doc1, doc2):
         - Mantén una respuesta clara, DIRECTA y organizada.
 
         NO AÑADAS NINGÚN MENSAJE EXTRA COMO "DESPUES DE ANALIZAR" O "LUEGO DE REVISAR" O "DESPUES DE EXAMINAR" O SIMILARES.
+        NO MENCIONAR TAMPOCO SI SE TRATA DE ESPACIOS ADICIONALES O LIGERAS MODIFICACIONES EN PRESENTACION O REDACCION
 
         <Seccion>
         {section}
