@@ -12,8 +12,6 @@ def main():
     #procesar_documento_y_almacenar(texto2, "doc2", DATABASE_URL)
     #save_diff(json1, json2, "json/diff.json")
 
-
-
     #:)
     #QUESTION = """ ¿Cuales son las diferencias en todo el documento? """
     #QUESTION = """ ¿Cuales son las diferencias en las certificaciones? """
@@ -27,10 +25,10 @@ def main():
     #QUESTION = """ De la seccion 5 del documento, qué información diferencia ambos documentos? """
     #QUESTION = """ De la seccion 7.1.1. del documento, qué información diferencia ambos documentos? """
     #QUESTION = "Cuáles son las diferencias entre las características y condiciones del servicio a contratar para los 2 documentos?"
-    #QUESTION = "De la seccion 2, 3 y 6 del documento, qué información diferencia ambos documentos?"
+    QUESTION = "De la seccion 2, 3 y 6 del documento, qué información diferencia ambos documentos?"
     #QUESTION = "Nosotros como desarrolladores, cuáles son los principales cambios en todo el documento que debemos tener en cuenta en el segundo documento?"
     #QUESTION = """ Hablame sobre los plazos """
-    QUESTION = "Cuales son las diferencias en la seccion 5.4 de los 2 documentos?"
+    #QUESTION = "Cuales son las diferencias en la seccion 5.4 de los 2 documentos?"
 
 
 

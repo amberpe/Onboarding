@@ -240,7 +240,8 @@ def gencomp2(retrieved_info, section, doc1, doc2):
         Por favor, realiza las siguientes tareas:
         1. **Analiza las diferencias encontradas en ambas versiones de texto** y extrae las citas más relevantes de la investigación.
         2. **Interpreta eliminaciones o adiciones entre ambas versiones. usa la informacion de la tarea anterior y DEBES SER BREVE Y DIRECTO EN TU RESPUESTA**
-
+        
+        Explicame tambien en que afectan estos cambios al documento OMITIR cuando se trate de cambios o ajustes de formato.
         Tienes que tener encuenta que todo '-': Cambios del primer documento, '+': Cambios del segundo documento.
         
         El formato del archivo markdown que vas a generar como respuesta que tienes que seguir es el siguiente:
@@ -257,9 +258,10 @@ def gencomp2(retrieved_info, section, doc1, doc2):
         Instrucciones:
         - Evita el uso de saltos de línea dobles. Usa un único salto de línea entre párrafos o elementos.
         - Mantén una respuesta clara, DIRECTA y organizada.
+        - Si no se encontraron diferencias significativas entre ambos documentos en una sección NO LA MENCIONES Y OMITELA.
 
         NO AÑADAS NINGÚN MENSAJE EXTRA COMO "DESPUES DE ANALIZAR" O "LUEGO DE REVISAR" O "DESPUES DE EXAMINAR" O SIMILARES.
-        NO MENCIONAR TAMPOCO SI SE TRATA DE ESPACIOS ADICIONALES O LIGERAS MODIFICACIONES EN PRESENTACION O REDACCION
+        NO MENCIONAR TAMPOCO SI SE TRATA DE ESPACIOS ADICIONALES, AJUSTES MENORES O LIGERAS MODIFICACIONES EN PRESENTACION O REDACCION
 
         <Seccion>
         {section}
@@ -313,7 +315,8 @@ def gencomp1(reporte, query):
 
         **Objetivo**:
         Proporciona una respuesta clara y concisa que detalle las diferencias relevantes para cada seccion entre las dos versiones de los documentos.
-        Recuera que la respuesta debe estar fuertemente relacionada a la pregunta que te estoy dando.
+        Explicame tambien en que afectan estos cambios al documento OMITIR cuando se trate de cambios o ajustes de formato.
+        Recuerda que la respuesta debe estar fuertemente relacionada a la pregunta que te estoy dando.
 
         <pregunta>{query}</pregunta> 
 
