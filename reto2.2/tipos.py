@@ -2,7 +2,7 @@ import re
 import pandas as pd
 import json
 from sqlalchemy.sql import text
-from ia import get_completion, embed_call, Session
+from ia import get_completion, embed_call, Session, obtener_seccion_ia
 from prepro import procesar
 
 
@@ -120,8 +120,8 @@ def reemplazar_numeros_escritos(texto: str) -> str:
 
 def extraer_numero_seccion(pregunta: str):
     texto_limpio = reemplazar_numeros_escritos(pregunta)
-    match1 = re.search(r"secci[oó]n\s+(\d+(\.\d+)*)", texto_limpio, re.IGNORECASE)
-    match2 = re.search(r"secci[oó]n\s+(\d+(\.\d+)*\.)", texto_limpio, re.IGNORECASE)
+    match1 = re.search(r"(\d+(\.\d+)*)", texto_limpio, re.IGNORECASE)
+    match2 = re.search(r"(\d+(\.\d+)*\.)", texto_limpio, re.IGNORECASE)
     if match1:
         return match1.group(1)
     if match2:
@@ -130,14 +130,6 @@ def extraer_numero_seccion(pregunta: str):
 
 
 # ------------------------------------
-def extraer_numeros_secciones(pregunta: str):
-    texto_limpio = reemplazar_numeros_escritos(pregunta)
-    matches = re.findall(r"secci[oó]n\s+([\d.,\sy]+)", texto_limpio, re.IGNORECASE)
-    if not matches:
-        return []
-    numeros = matches[0]
-    numeros = re.split(r"[,\syy]+", numeros)
-    return [num.strip() for num in numeros if num.strip()]
 
 
 def extraer_seccionv2(json_input, numero_seccion_base, incluir_subsecciones=True):
@@ -154,17 +146,20 @@ def extraer_seccionv2(json_input, numero_seccion_base, incluir_subsecciones=True
     for seccion in data.get("secciones", []):
         if incluir_subsecciones:
             if seccion["numero"].startswith(numero_seccion_base):
-                secciones_encontradas[seccion["numero"]] = seccion["contenido"]
+                title = f"{seccion["numero"]} {seccion["titulo"]}"
+                secciones_encontradas[title] = seccion["contenido"]
         else:
             if seccion["numero"] == numero_seccion_base:
-                secciones_encontradas[seccion["numero"]] = seccion["contenido"]
+                title = f"{seccion["numero"]} {seccion["titulo"]}"
+                secciones_encontradas[title] = seccion["contenido"]
 
     return secciones_encontradas
 
 
 def procesar_tipov2(query: str, diff_file: str, json_file1: str, json_file2: str):
-    numeros_secciones = extraer_numeros_secciones(query)
-    print(numeros_secciones)
+    numeros_secciones = obtener_seccion_ia(query)
+    secciones = re.findall(r'\d+(?:\.\d+)*', numeros_secciones)
+    lista_secciones = [seccion for seccion in secciones]
     if not numeros_secciones:
         raise ValueError("No se pudieron extraer números de secciones de la consulta.")
 
@@ -172,7 +167,7 @@ def procesar_tipov2(query: str, diff_file: str, json_file1: str, json_file2: str
     json_data1 = cargar_json(json_file1)
     json_data2 = cargar_json(json_file2)
     reporte = ""
-    for num in numeros_secciones:
+    for num in lista_secciones:
         if not num.endswith("."):
             num += "."
         secciones_doc1 = extraer_seccionv2(json_data1, num)
@@ -323,13 +318,15 @@ def gencomp1(reporte, query):
         **Formato de respuesta**:
         - Genera una respuesta para cada sección en el siguiente formato:
           ```
-          ### <número de la sección>
+          ### <número de la sección> <titulo de la sección>
           <resumen de las diferencias o indicación de que son iguales>
           ```
 
         IMPORTANTE ANALIZAR CADA SECCION PERO SI SON IDENTICAS NO MENCIONARLO
         NO MENCIONAR TAMPOCO SI SE TRATA DE ESPACIOS ADICIONALES O LIGERAS MODIFICACIONES EN PRESENTACION O REDACCION
         AÑADIR VIÑETAS 
+        Si no se encontraron diferencias significativas en una sección NO LA MENCIONES Y OMITELA.
+
 
         **Reporte**:
         {reporte}

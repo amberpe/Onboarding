@@ -95,6 +95,53 @@ def clasificar_pregunta(pregunta):
     response = get_answer(user_prompt, system=system_prompt)
     return response.strip()
 
+def obtener_seccion_ia(pregunta):
+    system_prompt = """
+    
+    Eres un extractor inteligente que identifica números de secciones mencionados en una consulta. Extrae los números de las secciones o divisiones indicados en la consulta y devuélvelos en una lista de enteros.
+    Instrucciones:
+    
+        Analiza el texto de la consulta.
+        Busca números de secciones o divisiones mencionados explícitamente en el texto, separados por comas, espacios, o conectores como "y."
+        Devuelve únicamente una lista de enteros con los números mencionados. Si no se hace referencia a secciones, devuelve una lista vacía: [].
+    
+    Ejemplos:
+    
+    Pregunta: "Diferencias entre la seccion ocho"
+    Respuesta: [8]
+    
+    Pregunta: "Comparacion de la seccion 2.1. y 2.2."
+    Respuesta: [2.1., 2.2.]
+    
+    Pregunta: "Comparacion de la seccion 6.3.1."
+    Respuesta: [6.3.1.]
+    
+    Pregunta: "Dame las secciones 2,3,6"
+    Respuesta: [2, 3, 6]
+    
+    Pregunta: "Analiza las partes 4, 7 y 10"
+    Respuesta: [4, 7, 10]
+    
+    Pregunta: "De acuerdo a las divisiones 1,2,5 y 9"
+    Respuesta: [1, 2, 5, 9]
+    
+    Pregunta: "No menciona ninguna sección específica"
+    Respuesta: []
+    
+    Pregunta: "¿Qué hay en las partes 3 y 8?"
+    Respuesta: [3, 8]
+        
+    IMPORTANTE: RESPETAR EL FORMATO DE RESPUESTA
+    Formato de respuesta:
+    [<numero extraido>]
+    
+    """
+    user_prompt = f"""Devuelveme los numeros de las secciones de la siguiente pregunta: <pregunta>{pregunta}</pregunta> """
+
+    response = get_answer(user_prompt, system=system_prompt)
+    return response.strip()
+
+
 def cosine_similarity(vec1, vec2):
     vec1 = np.array(vec1)
     vec2 = np.array(vec2)
