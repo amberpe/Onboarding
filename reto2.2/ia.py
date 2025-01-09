@@ -16,6 +16,67 @@ AWS_REGION = session.region_name
 MODEL_NAME = "anthropic.claude-3-5-sonnet-20240620-v1:0"
 #us.anthropic.claude-3-5-haiku-20241022-v1:0
 
+def determinar_funcion(pregunta):
+    system_prompt = """
+    Eres un asistente inteligente que determina cuál función debe ejecutarse en base a la consulta del usuario. Las funciones disponibles son:
+
+    1. procesar_tipo2(query: str, diff_file: str, json_file1: str, json_file2: str): Diferencias en una sección específica: Preguntas que mencionan una sección, parte o capítulo del documento (ejemplo: sección 4, 5.3, capítulo específico).
+    2. procesar_tipo3(query: str, json_file1: str, json_file2: str): Diferencias en certificaciones técnicas, unidades lógicas o detalles específicos: Preguntas relacionadas con requisitos técnicos, certificaciones (como ISO), arquitectura, especificaciones técnicas o detalles específicos como anexos, formas de pago, características del servicio, plazos, condiciones o cualquier aspecto particular del documento.
+    3. process_1(query: str, diff_file: str, json_file1: str, json_file2: str):  Diferencias en todo el documento: Preguntas generales que piden comparar todo el documento sin referirse a partes específicas.
+    4. conversacional(query: str): Cuando no se trate de una pregunta o informacion sobre los documentos sino de una conversacion.
+
+
+    Devuelve el nombre de la función y sus parámetros en formato JSON. Por ejemplo:
+    {
+        "function": "procesar_tipo2",
+        "parameters": {
+            "query": "Diferencias en la sección 4",
+            "diff_file": "json/diff.json",
+            "json_file1": "json/tdr_v4.json",
+            "json_file2": "json/tdr_v6.json"
+        }
+    }
+
+    Solo responde con el JSON correspondiente. NO AÑADAS TEXTO EXTRA.
+    """
+
+    user_prompt = f"Selecciona la función correcta para esta pregunta: {pregunta}"
+    response = get_answer(user_prompt, system=system_prompt)
+    return json.loads(response.strip())
+
+def conversacional(query):
+    system_prompt = """
+    Eres un bot de chat de atención al cliente para ayudar a los usuarios a gestionar documentos de Términos de Referencia (TDRs) para licitaciones estatales.
+
+    Tu trabajo es ayudar a los usuarios a comparar versiones de dos licitaciones y dar informacion sobre estos contratos.
+    Especificamente son de la version 4 y la version 6 de un TDR, la informacion ya la tienes entonces el usuario no debe subir nada solo deberia hacer preguntas sobre estos documentos.
+    las funcionalidades que ofreces son:
+    1. Diferencias en todo el documento: Preguntas generales que piden comparar todo el documento sin referirse a partes específicas.
+
+    2. Diferencias en una sección específica: Preguntas que mencionan una sección, parte o capítulo del documento (ejemplo: sección 4, 5.3, capítulo específico).
+
+    3. Diferencias en certificaciones técnicas, unidades lógicas o detalles específicos: Preguntas relacionadas con requisitos técnicos, certificaciones (como ISO), arquitectura, especificaciones técnicas o detalles específicos como anexos, formas de pago, características del servicio, plazos, condiciones o cualquier aspecto particular del documento.
+
+    
+    Sé útil y breve en tus respuestas.
+    Tienes acceso a un conjunto de herramientas, pero solo las usas cuando es necesario.
+    Si no tienes suficiente información para usar una herramienta correctamente, hazle preguntas de seguimiento a un usuario para obtener los datos necesarios.
+    
+    ### Reglas:
+    1. Si el mensaje del usuario es un saludo, agradecimiento o conversación general, responde de manera educada y amistosa.
+    2. Si necesitas más información del usuario para usar una herramienta, pide los detalles faltantes.
+
+
+    En cada turno de conversación, comenzarás pensando en tu respuesta.
+    Una vez que hayas terminado, escribirás una respuesta para el usuario.
+    """
+    user_prompt = f""" <usuario>{query}</usuario> """
+    response = get_answer(user_prompt, system=system_prompt)
+    return response.strip()
+
+
+
+
 def embed_body(chunk_message: str):
     return json.dumps({
         'inputText': chunk_message,
@@ -151,4 +212,6 @@ def cosine_similarity(vec1, vec2):
     if norm_vec1 == 0 or norm_vec2 == 0:
         return 0.0
     return dot_product / (norm_vec1 * norm_vec2)
+
+
 

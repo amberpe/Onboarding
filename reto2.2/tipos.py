@@ -45,7 +45,6 @@ def realizar_consulta(query: str, top_k: int, name_table: str, json_file):
     resultados = search_similar_fragments(query, top_k, name_table)
     indices_relevantes = resultados["numero_seccion"].unique().tolist()
     indices_relevantes = [num if num.endswith('.') else num + '.' for num in indices_relevantes]
-    print(indices_relevantes)
     json_data = cargar_json(json_file)
     contenido_completo = obtener_contenido_por_indices(json_data, indices_relevantes)
     # print(contenido_completo)
@@ -62,12 +61,12 @@ def generate_research(search_results, indices_relevantes):
     return research
 
 
-def procesar_tipo3(question: str, json_file1: str, json_file2: str):
+def procesar_tipo3(query: str, json_file1: str, json_file2: str):
     contenido_completo1, indices_relevantes1 = realizar_consulta(
-        question, top_k=3, name_table="tdr_v4_2", json_file=json_file1
+        query, top_k=3, name_table="tdr_v4_2", json_file=json_file1
     )
     contenido_completo2, indices_relevantes2 = realizar_consulta(
-        question, top_k=3, name_table="tdr_v6_2", json_file=json_file2
+        query, top_k=3, name_table="tdr_v6_2", json_file=json_file2
     )
     research1 = generate_research(contenido_completo1, indices_relevantes1)
     research2 = generate_research(contenido_completo2, indices_relevantes2)
@@ -88,7 +87,7 @@ def procesar_tipo3(question: str, json_file1: str, json_file2: str):
     2. **Identifica cómo cambia la respuesta a la pregunta entre ambas versiones.**
     3. **Devuelve una respuesta fuertemente relacionada con mi pregunta especifica.**
 
-    **Pregunta específica**: {question}
+    **Pregunta específica**: {query}
 
     **Versión antigua**:
     <bloque>{research1}</bloque>
@@ -158,6 +157,7 @@ def extraer_seccionv2(json_input, numero_seccion_base, incluir_subsecciones=True
 
 def procesar_tipov2(query: str, diff_file: str, json_file1: str, json_file2: str):
     numeros_secciones = obtener_seccion_ia(query)
+    print(numeros_secciones)
     secciones = re.findall(r'\d+(?:\.\d+)*', numeros_secciones)
     lista_secciones = [seccion for seccion in secciones]
     if not numeros_secciones:

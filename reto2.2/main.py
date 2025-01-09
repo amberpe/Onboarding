@@ -1,18 +1,50 @@
-from tipos import procesar_tipo2,procesar_tipo3, process_1, procesar_tipov2
-from ia import clasificar_pregunta, get_completion
+from tipos import procesar_tipo3, process_1, procesar_tipov2
+from ia import determinar_funcion, conversacional
 
+
+def process_tool_call(tool_name, parametros):
+    if tool_name == "procesar_tipo2":
+        return procesar_tipov2(**parametros)
+    elif tool_name == "procesar_tipo3":
+        return procesar_tipo3(**parametros)
+    elif tool_name == "process_1":
+        return process_1(**parametros)
+    elif tool_name == "conversacional":
+        return conversacional(**parametros)
+    else:
+        return f"Tool '{tool_name}' is not recognized."
 
 def main():
-    doc1 = "tdr_v4"
-    doc2 = "tdr_v6"
+    print("Chatbot de comparacion de TDRS")
 
-    #texto1 = pymupdf4llm.to_markdown(f"{doc1}.pdf")
-    #texto2 = pymupdf4llm.to_markdown(f"{doc2}.pdf")
-    #procesar_documento_y_almacenar(texto1, "doc1", DATABASE_URL)
-    #procesar_documento_y_almacenar(texto2, "doc2", DATABASE_URL)
-    #save_diff(json1, json2, "json/diff.json")
+    while True:
+        pregunta = input("\nUser: ")
+        if pregunta.lower() in ["salir", "exit"]:
+            print("¡Hasta luego!")
+            break
 
-    #:)
+        try:
+            funcion_recomendada = determinar_funcion(pregunta)
+            nombre_funcion = funcion_recomendada["function"]
+            parametros = funcion_recomendada["parameters"]
+
+            print(f"Función seleccionada: {nombre_funcion}")
+            #print(f"Parámetros: {parametros}")
+
+            resultado = process_tool_call(nombre_funcion, parametros)
+            print("\nBot:")
+            print(resultado)
+
+        except Exception as e:
+            print(f"\nHubo un error: {e}")
+
+
+
+
+
+
+if __name__ == '__main__':
+
     #QUESTION = """ ¿Cuales son las diferencias en todo el documento? """
     #QUESTION = """ ¿Cuales son las diferencias en las certificaciones? """
     #QUESTION = """Cuales son las formas de pago?"""
@@ -31,31 +63,4 @@ def main():
     #QUESTION = """ Hablame sobre los plazos """
     #QUESTION = "Cuales son las diferencias en la seccion 5.4 de los 2 documentos?"
 
-
-    #QUESTION = optimizar_query(QUESTION)
-    first_answer = clasificar_pregunta(QUESTION)
-    print(first_answer)
-
-
-    json1 = f"json/{doc1}.json"
-    json2 = f"json/{doc2}.json"
-
-    result = ""
-    if first_answer == '2':
-        result = procesar_tipov2(QUESTION, "json/diff.json", json1, json2)
-    elif first_answer == '3':
-        result = procesar_tipo3(QUESTION, json1, json2)
-    else:
-        result = process_1(QUESTION, "json/diff.json", json1, json2)
-
-    print(result)
-
-
-
-
-
-
-
-
-if __name__ == '__main__':
     main()
