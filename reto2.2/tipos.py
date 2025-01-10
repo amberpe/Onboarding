@@ -3,7 +3,6 @@ import pandas as pd
 import json
 from sqlalchemy.sql import text
 from ia import get_completion, embed_call, Session, obtener_seccion_ia
-from prepro import procesar
 
 
 def search_similar_fragments(query_text, top_k, name_table):
@@ -61,7 +60,7 @@ def generate_research(search_results, indices_relevantes):
     return research
 
 
-def procesar_tipo3(query: str, json_file1: str, json_file2: str):
+def procesar_tipo3(query: str, diff_file: str, json_file1: str, json_file2: str):
     contenido_completo1, indices_relevantes1 = realizar_consulta(
         query, top_k=3, name_table="tdr_v4_2", json_file=json_file1
     )

@@ -16,6 +16,12 @@ AWS_REGION = session.region_name
 MODEL_NAME = "anthropic.claude-3-5-sonnet-20240620-v1:0"
 #us.anthropic.claude-3-5-haiku-20241022-v1:0
 
+
+
+
+
+
+
 def determinar_funcion(pregunta):
     system_prompt = """
     Eres un asistente inteligente que determina cuál función debe ejecutarse en base a la consulta del usuario. Las funciones disponibles son:
